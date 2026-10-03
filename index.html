@@ -1011,5 +1011,29 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!
 
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
 </script>
+<script>
+(function(){
+  const SUPABASE_URL='https://fvigmtojeywwyhfgyeww.supabase.co';
+  const SUPABASE_KEY='sb_publishable_DV1qmRyMo7kjtJxQ2JW_HA_rF9ACkuf';
+  const driverDb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  async function enforceDriverApp(){
+    try{
+      const {data,error}=await driverDb.auth.getSession();
+      if(error||!data?.session)return;
+      const roleResult=await driverDb.rpc('get_my_account_role');
+      const accountRole=roleResult.data?.role;
+      if(roleResult.error||accountRole!=='DRIVER'){
+        await driverDb.auth.signOut();
+        location.replace('./auth/login.html?role=DRIVER&error=driver_only');
+        return;
+      }
+      document.body.classList.add('driver-only-app');
+      document.querySelectorAll('[data-view="customer"],[data-side="customer"]').forEach(x=>x.remove());
+    }catch(e){console.error('Driver app role check:',e);}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',enforceDriverApp);
+  else enforceDriverApp();
+})();
+</script>
 </body>
 </html>
